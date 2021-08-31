@@ -3,83 +3,61 @@
 * URL: https://bootstrapmade.com/php-email-form/
 * Author: BootstrapMade.com
 */
-(function () {
-  "use strict";
-
-  let forms = document.querySelectorAll('.php-email-form');
-
-  forms.forEach( function(e) {
-    e.addEventListener('submit', function(event) {
-      event.preventDefault();
-
-      let thisForm = this;
-
-      let action = thisForm.getAttribute('action');
-      let recaptcha = thisForm.getAttribute('data-recaptcha-site-key');
-      
-      if( ! action ) {
-        displayError(thisForm, 'The form action property is not set!')
-        return;
-      }
-      thisForm.querySelector('.loading').classList.add('d-block');
-      thisForm.querySelector('.error-message').classList.remove('d-block');
-      thisForm.querySelector('.sent-message').classList.remove('d-block');
-
-      let formData = new FormData( thisForm );
-
-      if ( recaptcha ) {
-        if(typeof grecaptcha !== "undefined" ) {
-          grecaptcha.ready(function() {
-            try {
-              grecaptcha.execute(recaptcha, {action: 'php_email_form_submit'})
-              .then(token => {
-                formData.set('recaptcha-response', token);
-                php_email_form_submit(thisForm, action, formData);
-              })
-            } catch(error) {
-              displayError(thisForm, error)
-            }
-          });
-        } else {
-          displayError(thisForm, 'The reCaptcha javascript API url is not loaded!')
+(function() {
+  'use strict';
+  window.addEventListener('load', function() {
+    var form = document.getElementById('frmContact');
+  	  form.addEventListener('submit', function(event) { 
+        if (form.checkValidity() === false) {
+          event.preventDefault();
+          event.stopPropagation();
+          setValidationResponse();
         }
-      } else {
-        php_email_form_submit(thisForm, action, formData);
-      }
-    });
-  });
-
-  function php_email_form_submit(thisForm, action, formData) {
-    fetch(action, {
-      method: 'POST',
-      body: formData,
-      headers: {'X-Requested-With': 'XMLHttpRequest'}
-    })
-    .then(response => {
-      if( response.ok ) {
-        return response.text()
-      } else {
-        throw new Error(`${response.status} ${response.statusText} ${response.url}`); 
-      }
-    })
-    .then(data => {
-      thisForm.querySelector('.loading').classList.remove('d-block');
-      if (data.trim() == 'OK') {
-        thisForm.querySelector('.sent-message').classList.add('d-block');
-        thisForm.reset(); 
-      } else {
-        throw new Error(data ? data : 'Form submission failed and no error message returned from: ' + action); 
-      }
-    })
-    .catch((error) => {
-      displayError(thisForm, error);
-    });
-  }
-
-  function displayError(thisForm, error) {
-    thisForm.querySelector('.loading').classList.remove('d-block');
-    thisForm.querySelector('.error-message').innerHTML = error;
-    thisForm.querySelector('.error-message').classList.add('d-block');
-  }
-
+        form.classList.add('was-validated');
+      }, false);
+  }, false);
 })();
+
+function setValidationResponse() {
+	var emailRegex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+	
+	var userName = document.getElementById("name").value;
+	var userEmail = document.getElementById("email").value;
+	var subject = document.getElementById("subject").value;
+	var content = document.getElementById("message").value;
+	
+	if (userName == "") {
+		markAsInvalid("userName", "required");
+	} else {
+		markAsValid("userName");
+	}
+	
+	if (userEmail == "") {
+		markAsInvalid("userEmail", "required");
+	} else if(!emailRegex.test(userEmail)) {
+		markAsInvalid("userEmail", "invalid");
+	} else {
+		markAsValid("userEmail");
+	}
+	
+	if (subject == "") {
+		markAsInvalid("subject", "required");
+	} else {
+		markAsValid("subject");
+	}
+	
+	if (content == "") {
+		markAsInvalid("content", "required");
+	} else {
+		markAsValid("content");
+	}
+}
+
+function markAsValid(id) {
+	document.getElementById(id+"-info").style.display = "none";
+}
+
+function markAsInvalid(id, feedback) {
+	document.getElementById(id+"-info").style.display = "inline";
+	document.getElementById(id+"-info").innerText = feedback;
+}
